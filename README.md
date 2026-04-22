@@ -6,6 +6,6 @@ Solution for each project is in the respective folder. The folder name is the sa
 
 ### Beginner Projects
 
-1. [Task Tracker](https://roadmap.sh/projects/task-tracker)
+1. [Task Tracker]
 
 You can find the list of beginner projects [here](https://roadmap.sh/backend/projects?difficulty=beginner).
