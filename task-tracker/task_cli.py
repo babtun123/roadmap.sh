@@ -5,6 +5,7 @@ import json
 from datetime import datetime
 
 TASKS_FILE = "tasks.json"
+VALID_STATUSES = ("todo", "in-progress", "done")
 
 def handle_add(args):
     """Add a new task to the JSON file.
@@ -25,15 +26,14 @@ def handle_add(args):
     if tasks:
         new_id = max(task["id"] for task in tasks) + 1
     else:
-        print("task is empty")
         new_id = 1
 
-    now_as_string = datetime.now().isoformat()
+    now_as_string = _now()
 
     new_task = {
         "id": new_id, 
         "description": description, 
-        "status": "todo",
+        "status": VALID_STATUSES[0],
         "createdAt": now_as_string, 
         "updatedAt": now_as_string,
     }
@@ -55,7 +55,7 @@ def handle_list(args):
 
     tasks = load_tasks()
     if not tasks:
-        print("No tasks found")
+        print("Error: No tasks found")
         return
 
     # Determine which tasks to show
@@ -63,17 +63,15 @@ def handle_list(args):
         task_to_show = tasks
     else:
         filter_name = args[0]
-        if filter_name not in ("done", "todo", "in-progress"):
+        if filter_name not in VALID_STATUSES:
             print(f"Error: '{filter_name}' is not a valid status")
             return
         task_to_show = [t for t in tasks if t["status"] == filter_name]
 
-    # Handle the "nothing matches the filter" case
     if not task_to_show:
-        print(f"No tasks with status '{args[0]}'")
+        print(f"Error: No tasks with status '{args[0]}'")
         return
 
-    # print tasks
     for task in task_to_show:
         print(
             f"id: {task['id']} "
@@ -81,21 +79,90 @@ def handle_list(args):
             f"status: {task['status']}"
         )
 
+def _find_task(args):
+    """Parse a task ID from args, load tasks, and find the matching task.
+
+    Used by update, delete, mark-in-progress, and mark-done — all of which
+    need to locate an existing task by ID before doing their own thing.
+
+    On success, returns (tasks_list, index).
+    On any failure (missing arg, non-numeric ID, empty file, no match),
+    prints an error and returns (None, None). The caller should check
+    for None and return early.
+    """
+    if not args:
+        print("Error: missing Id number")
+        return None, None
+
+    try:
+        task_id = int(args[0])
+    except ValueError:
+        print(f"Error: '{args[0]}' is not a valid task ID (expected a number)")
+        return None, None
+
+    tasks = load_tasks()
+    if not tasks:
+        print("No tasks exist yet. Add one with add 'description'")
+        return None, None
+
+    index = next((i for i, t in enumerate(tasks) if t["id"] == task_id), None)
+    if index is None:
+        print(f"Error: No task found with ID {task_id}")
+        return None, None
+
+    return tasks, index
+
+def _now():
+    return datetime.now().isoformat()
+
 def handle_update(args):
     """used to update a task"""
-    print(f"update called with args: {args}")
+    if len(args) != 2:
+        print("Error: 'update' requires exactly two arguments: an ID and a new description")
+        return
+    tasks, index = _find_task(args)
+    if index is None:
+        return
+
+    current_description = tasks[index]["description"]
+    tasks[index]["description"] = args[1]
+    tasks[index]["updatedAt"] = _now()
+
+    task_id = tasks[index]["id"]
+    save_tasks(tasks)
+    print(f"Task {task_id} description changed from '{current_description}' to '{args[1]}'")
+
 
 def handle_delete(args):
-    """used to delete a tesk"""
-    print(f"delete called with args: {args}")
+    """Delete a task by its ID."""
+    tasks, index = _find_task(args)
+    if index is None:
+        return
+
+    deleted_id = tasks[index]["id"]
+    del tasks[index]
+    save_tasks(tasks)
+    print(f"Task {deleted_id} deleted successfully")
+
+def _mark_status(args, new_status):
+    """helper function for handle_mark_in_progress and handle_mark_done"""
+    tasks, index = _find_task(args)
+    if index is None:
+        return
+
+    task = tasks[index]
+    task["status"] = new_status
+    task["updatedAt"] = _now()
+    save_tasks(tasks)
+    print(f"Task {task['id']} marked as {new_status}")
 
 def handle_mark_in_progress(args):
     """used to mark a task as in-progress"""
-    print(f"mark-in-progress called with args: {args}")
+    _mark_status(args, VALID_STATUSES[1])
 
 def handle_mark_done(args):
     """used to mark a task as done"""
-    print(f"mark-done called with args: {args}")
+    _mark_status(args, VALID_STATUSES[2])
 
 
 # I'm using a dictionary to map each user task input
@@ -128,8 +195,26 @@ def save_tasks(tasks_list):
     with open(TASKS_FILE, "w", encoding="utf-8") as f:
         json.dump(tasks_list, f, indent=2)
 
+def print_usage():
+    """Menu options for user"""
+    print("Usage: task_cli.py <command> [args...]")
+    print()
+    print("Commands:")
+    print("  add <description>                 Add a new task")
+    print("  list [status]                     List tasks (optionally filter by status)")
+    print("  update <id> <description>         Update a task's description")
+    print("  delete <id>                       Delete a task")
+    print("  mark-in-progress <id>             Mark a task as in-progress")
+    print("  mark-done <id>                    Mark a task as done")
+    print()
+    print("Statuses for 'list': todo, in-progress, done")
+
 def main():
     """main func"""
+    if len(sys.argv) < 2:
+        print_usage()
+        return
+
     command = sys.argv[1]
     args = sys.argv[2:]
 
@@ -137,6 +222,8 @@ def main():
         commands[command](args)
     else:
         print(f"unknown command {command}")
+        print()
+        print_usage()
 
 if __name__ == "__main__":
     main()
