@@ -14,6 +14,10 @@ def handle_add(descr, amount_fl):
     else:
         new_id = 1
 
+    if amount_fl < 0:
+        print("Error: Can't add a negative amount")
+        return
+
     now_as_string = _now()
     new_expense = {
         "id": new_id,
@@ -40,6 +44,9 @@ def handle_update(upd_id, updt_desc, updt_amnt):
     if updt_desc is not None:
         expenses[index]["description"] = updt_desc
     if updt_amnt is not None:
+        if updt_amnt < 0:
+            print("Error: Can't update with a negative amount")
+            return
         expenses[index]["amount"] = updt_amnt
     expenses[index]["updatedAt"] = _now()
 
@@ -70,8 +77,27 @@ def handle_list():
               f"    {expense["description"]}     ${expense["amount"]}"
         )
 
-def handle_summary():
+def handle_summary(month_val):
     """summary func"""
+    expenses = load_expenses()
+    if not expenses:
+        print("Error: No expenses exist yet. Add one with add command")
+        return
+    month_val_string = "0" + str(month_val)
+    if month_val:
+        expense_count = 0
+        for expense in expenses:
+            extract_month = expense["updatedAt"][5:7]
+            if month_val_string == extract_month:
+                expense_count += expense["amount"]
+        month = month_map[extract_month]
+        print(f"Total expenses for {month}: ${expense_count}")
+    else:
+        expense_count = 0
+        for expense in expenses:
+            expense_count += expense["amount"]
+        print(f"Total expenses: ${expense_count}")
+
 
 def _now():
     return datetime.now().isoformat()
@@ -105,6 +131,20 @@ def save_expenses(expense_list):
     with open(EXPENSE_FILE, "w", encoding="utf-8") as f:
         json.dump(expense_list, f, indent=2)
 
+month_map = {
+    "01": "January",
+    "02": "February",
+    "03": "March",
+    "04": "April",
+    "05": "May",
+    "06": "June",
+    "07": "July",
+    "08": "August",
+    "09": "September",
+    "10": "October",
+    "11": "November",
+    "12": "December"
+}
 
 def main():
     """Main func"""
@@ -127,9 +167,13 @@ def main():
     delete_parser = subparsers.add_parser("delete", help="delete parser help")
     delete_parser.add_argument("--id", type=int, required=True)
 
-    #List parser
+    # List parser
     list_parser = subparsers.add_parser("list", help="list parser help")
     _ = list_parser
+
+    # Summary parser
+    summary_parser = subparsers.add_parser("summary", help="summary parser help")
+    summary_parser.add_argument("--month", type=int, required=False)
 
     args = parser.parse_args()
     print()
@@ -143,6 +187,8 @@ def main():
         handle_delete(args.id)
     elif args.command == "list":
         handle_list()
+    elif args.command == "summary":
+        handle_summary(args.month)
     else:
         print(f"{args.command} not found")
 
