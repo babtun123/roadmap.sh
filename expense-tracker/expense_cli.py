@@ -83,14 +83,18 @@ def handle_summary(month_val):
     if not expenses:
         print("Error: No expenses exist yet. Add one with add command")
         return
-    month_val_string = "0" + str(month_val)
-    if month_val:
+    month_val_string = str(month_val).zfill(2)
+
+    if month_val is not None:
+        if not _validate_month(month_val):
+            print(f"Error: '{month_val}' is not a valid month (must be 1-12)")
+            return
         expense_count = 0
         for expense in expenses:
             extract_month = expense["updatedAt"][5:7]
             if month_val_string == extract_month:
                 expense_count += expense["amount"]
-        month = month_map[extract_month]
+        month = month_map[month_val_string]
         print(f"Total expenses for {month}: ${expense_count}")
     else:
         expense_count = 0
@@ -98,6 +102,9 @@ def handle_summary(month_val):
             expense_count += expense["amount"]
         print(f"Total expenses: ${expense_count}")
 
+def _validate_month(month_val):
+    """Return True if month_val is between 1 and 12, False otherwise."""
+    return 1 <= month_val <= 12
 
 def _now():
     return datetime.now().isoformat()
