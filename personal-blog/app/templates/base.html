@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    {% if title %}
+    <title>{{ title }} - Personal Blog</title>
+    {% else %}
+    <title>Welcome to Samuel's Blog</title>
+    {% endif %}
+  </head>
+  <body>
+    <a href="{{ url_for('home') }}">Home</a>
+    {% block content %}{% endblock %}
+  </body>
+</html>

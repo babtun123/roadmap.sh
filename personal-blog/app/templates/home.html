@@ -1,0 +1,12 @@
+{% extends "base.html" %} {% block content %}
+<h1>Personal Blog</h1>
+{% for article in articles %}
+<div>
+  <p>
+    <a href="{{ url_for('article', slug=article.slug) }}"
+      >{{ article.title }}</a
+    >
+    - {{ article.date }}
+  </p>
+</div>
+{% endfor %} {% endblock %}
