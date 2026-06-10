@@ -1,0 +1,9 @@
+{% extends "base.html" %} {% block content %}
+<h1>Edit Article</h1>
+<form method="post">
+  <input type="text" name="title" value="{{ selected_article.title }}" />
+  <input type="text" name="date" value="{{ selected_article.date }}" />
+  <textarea name="content">{{ selected_article.content }}</textarea>
+  <button type="submit">Update</button>
+</form>
+{% endblock %}

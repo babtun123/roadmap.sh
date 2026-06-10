@@ -1,0 +1,9 @@
+{% extends "base.html" %} {% block content %}
+<h1>New Article</h1>
+<form method="post">
+  <input type="text" name="title" />
+  <input type="text" name="date" />
+  <textarea name="content"></textarea>
+  <button type="submit">publish</button>
+</form>
+{% endblock %}

@@ -33,3 +33,25 @@ def save_json(file_path, data):
     """Save json file"""
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
+
+def validate_login_cred(user, passw):
+    """Validate login credentials"""
+    return user == Config.ADMIN_USERNAME and passw == Config.ADMIN_PASSWORD
+
+def save_article(data):
+    """Save article"""
+    title = data['title']
+    slug = title.lower().replace(' ', '-')
+    path = slug + ".json"
+    save_json(ARTICLE_PATH / path, data)
+
+def update_article(slug, data):
+    """update article"""
+    path = slug + ".json"
+    save_json(ARTICLE_PATH / path, data)
+
+def delete_article(slug):
+    """delete an article"""
+    file = slug + ".json"
+    path = ARTICLE_PATH / file
+    path.unlink()
